@@ -10,8 +10,14 @@ import subprocess
 import queue
 import re
 import sys
-import ctypes
-import win32gui
+
+# Import cross-platform window management
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from utils.cross_platform import (
+    wm,  # WindowManager instance for cross-platform window operations
+    force_focus_cross_platform, send_escape_key_cross_platform,
+    is_system_menu_open_cross_platform, return_to_main_app_cross_platform
+)
 
 class WordJumbleGame(tk.Tk):
     def __init__(self):
@@ -111,8 +117,8 @@ class WordJumbleGame(tk.Tk):
         while True:
             time.sleep(0.5)  # Check every 500ms
             try:
-                hwnd = ctypes.windll.user32.GetForegroundWindow()
-                if hwnd != self.winfo_id():
+                current_window = wm.get_foreground_window()
+                if current_window and current_window.native_handle != self.winfo_id():
                     self.force_focus()
             except Exception as e:
                 print(f"Focus monitoring error: {e}")
@@ -122,21 +128,19 @@ class WordJumbleGame(tk.Tk):
         try:
             self.iconify()
             self.deiconify()
-            ctypes.windll.user32.SetForegroundWindow(self.winfo_id())
+            window_handle = wm.WindowHandle(self.winfo_id())
+            wm.set_foreground_window(window_handle)
         except Exception as e:
             print(f"Error forcing focus: {e}")
 
     def send_esc_key(self):
         """Send the ESC key to close the Start Menu."""
-        ctypes.windll.user32.keybd_event(0x1B, 0, 0, 0)  # ESC key down
-        ctypes.windll.user32.keybd_event(0x1B, 0, 2, 0)  # ESC key up
+        wm.send_key(wm.VK_ESCAPE)
         print("ESC key sent to close Start Menu.")
 
     def is_start_menu_open(self):
         """Check if the Start Menu is currently open and focused."""
-        hwnd = win32gui.GetForegroundWindow()  # Get the handle of the active (focused) window
-        class_name = win32gui.GetClassName(hwnd)  # Get the class name of the active window
-        return class_name in ["Shell_TrayWnd", "Windows.UI.Core.CoreWindow"]
+        return wm.is_system_menu_open()
 
     def monitor_start_menu(self):
         """Continuously check and close the Start Menu if it is open."""

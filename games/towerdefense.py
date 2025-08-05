@@ -9,8 +9,14 @@ import os
 import subprocess
 import sys
 import math
-import ctypes
-import win32gui
+
+# Import cross-platform window management
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from utils.cross_platform import (
+    wm,  # WindowManager instance for cross-platform window operations
+    force_focus_cross_platform, send_escape_key_cross_platform,
+    is_system_menu_open_cross_platform, return_to_main_app_cross_platform
+)
 
 # Initialize the mixer (only once)
 pygame.mixer.init()
@@ -1233,8 +1239,9 @@ def get_window_handle():
 def force_focus():
     hwnd = get_window_handle()
     try:
-        ctypes.windll.user32.ShowWindow(hwnd, 9)
-        ctypes.windll.user32.SetForegroundWindow(hwnd)
+        window_handle = wm.WindowHandle(hwnd)
+        wm.show_window(window_handle, wm.SW_RESTORE)
+        wm.set_foreground_window(window_handle)
     except Exception as e:
         print(f"Error forcing focus: {e}")
 
@@ -1242,19 +1249,16 @@ def monitor_focus():
     while True:
         time.sleep(0.5)
         hwnd = get_window_handle()
-        fg_hwnd = ctypes.windll.user32.GetForegroundWindow()
-        if hwnd != fg_hwnd:
+        current_window = wm.get_foreground_window()
+        if current_window and hwnd != current_window.native_handle:
             force_focus()
 
 def send_esc_key():
-    ctypes.windll.user32.keybd_event(0x1B, 0, 0, 0)
-    ctypes.windll.user32.keybd_event(0x1B, 0, 2, 0)
+    wm.send_key(wm.VK_ESCAPE)
     print("ESC key sent to close Start Menu.")
 
 def is_start_menu_open():
-    hwnd = win32gui.GetForegroundWindow()
-    class_name = win32gui.GetClassName(hwnd)
-    return class_name in ["Shell_TrayWnd", "Windows.UI.Core.CoreWindow"]
+    return wm.is_system_menu_open()
 
 def monitor_start_menu():
     while True:

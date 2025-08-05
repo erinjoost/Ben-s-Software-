@@ -6,9 +6,14 @@ import threading
 import queue
 import subprocess
 import os
-import win32gui
-import ctypes
 import pygame
+
+# Import cross-platform window management
+import sys
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from utils.cross_platform import (
+    wm
+)
 
 # Initialize pygame, mixer, and TTS engine
 pygame.init()
@@ -40,18 +45,17 @@ def monitor_focus():
         if hwnd is None:
             print("Window handle not available. Skipping focus adjustment.")
             continue
-        fg_hwnd = ctypes.windll.user32.GetForegroundWindow()
-        if hwnd != fg_hwnd:
+        current_window = wm.get_foreground_window()
+        if current_window and current_window.native_handle != hwnd:
             force_focus()
 
 def send_esc_key():
-    ctypes.windll.user32.keybd_event(0x1B, 0, 0, 0)
-    ctypes.windll.user32.keybd_event(0x1B, 0, 2, 0)
+    wm.send_key(wm.VK_ESCAPE)
     print("ESC key sent to close Start Menu.")
 
 def is_start_menu_open():
-    hwnd = win32gui.GetForegroundWindow()
-    class_name = win32gui.GetClassName(hwnd)
+    current_window = wm.get_foreground_window()
+    class_name = wm.get_class_name(current_window) if current_window else ""
     return class_name in ["Shell_TrayWnd", "Windows.UI.Core.CoreWindow"]
 
 def monitor_start_menu():

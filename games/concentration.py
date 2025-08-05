@@ -5,12 +5,18 @@ from functools import partial
 import random
 import time
 import threading
-import ctypes
-import win32gui
 import subprocess
 import sys
 import os
 import pyttsx3
+
+# Import cross-platform window management
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from utils.cross_platform import (
+    wm,  # WindowManager instance for cross-platform window operations
+    force_focus_cross_platform, send_escape_key_cross_platform,
+    is_system_menu_open_cross_platform
+)
 
 class MemoryGame(tk.Tk):
     def __init__(self):
@@ -109,20 +115,22 @@ class MemoryGame(tk.Tk):
         while True:
             time.sleep(0.5)
             try:
-                if ctypes.windll.user32.GetForegroundWindow() != self.winfo_id():
+                current_window = wm.get_foreground_window()
+                if current_window and current_window.native_handle != self.winfo_id():
                     self.iconify(); self.deiconify()
-                    ctypes.windll.user32.SetForegroundWindow(self.winfo_id())
+                    window_handle = wm.WindowHandle(self.winfo_id())
+                    wm.set_foreground_window(window_handle)
             except: pass
 
     def _monitor_start_menu(self):
         while True:
             time.sleep(0.5)
             try:
-                hwnd = win32gui.GetForegroundWindow()
-                cls  = win32gui.GetClassName(hwnd)
+                current_window = wm.get_foreground_window()
+                cls = wm.get_class_name(current_window) if current_window else ""
                 if cls in ("Shell_TrayWnd","Windows.UI.Core.CoreWindow"):
-                    ctypes.windll.user32.keybd_event(0x1B,0,0,0)
-                    ctypes.windll.user32.keybd_event(0x1B,0,2,0)
+                    wm.send_key(wm.VK_ESCAPE)
+                    # Key up handled by wm.send_key above
             except: pass
 
 

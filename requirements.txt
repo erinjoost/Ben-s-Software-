@@ -1,9 +1,19 @@
-pyttsx3
-pyautogui
-pynput
-psutil
-requests
-pywin32
-pandas
-pygame
-pymunk
+# Core dependencies for Ben's Software Suite
+pyttsx3>=2.90          # Text-to-speech engine
+pygame>=2.5.0          # Game development framework
+pandas>=2.0.0          # Data manipulation for trivia/games
+
+# System interaction and automation
+pyautogui>=0.9.54      # GUI automation (cross-platform)
+pynput>=1.7.6          # Input monitoring and control
+psutil>=5.9.0          # System utilities
+
+# Network requests
+requests>=2.31.0       # HTTP requests
+
+# Platform-specific dependencies
+# Windows-specific (install only on Windows systems)
+pywin32>=306; sys_platform == "win32"
+
+# macOS-specific dependencies (optional, for advanced features)
+pyobjc-framework-Cocoa>=9.0; sys_platform == "darwin"  # Uncomment if needed
